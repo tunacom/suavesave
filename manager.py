@@ -1,3 +1,5 @@
+"""Save manager for games that only support autosaves (e.g. Dark Souls)."""
+
 __author__ = 'tunacom'
 
 import enum
@@ -8,11 +10,28 @@ import sys
 import shutil
 import time
 
+import errors
+
 MANAGER_DIRNAME = 'SuaveSave'
 POLL_INTERVAL = 0.2
 ACTIVE_POLL_INTERVAL = 0.1
 MAX_ACTIVE_POLLS = 10
-HELP_TEXT = '''To navigate the menus, enter a choice number or keyword.'''
+
+HELP_TEXT = '''To navigate the menus, enter an option number or keyword.
+
+Shortcut keywords for certain options are displayed in ALL CAPS in parentheses
+after the option. If nothing is displayed, the keyword is the full text of the
+option (case insensitive).
+
+Profiles are collections of saves to help you organize them. When you create
+your first profile, it will be set as the default. You can change the default
+profile later through the profile settings.
+
+With a profile selected, you can store a save by choosing the CREATE option.
+You can overwrite your existing save for the game with a stored one using the
+LOAD option. The AUTOLOAD option works like the LOAD option, but will continue
+to restore the selected save whenever the game you are playing autosaves.
+'''
 
 
 class MenuState(enum.Enum):
@@ -34,23 +53,9 @@ class MenuState(enum.Enum):
   DELETE_PROFILE = 14
 
   # Special modes.
-  HELP = 99
+  HELP = 98
+  PROFILE_HELP = 99
   EXIT = 100
-
-
-class ManagerError(Exception):
-  """Base class for manager exceptions."""
-  pass
-
-
-class NoProfileException(ManagerError):
-  """Exception to be raised if no profiles exist."""
-  pass
-
-
-class NoSaveException(ManagerError):
-  """Exception to be raised if no saves exist."""
-  pass
 
 
 class Save(object):
@@ -96,7 +101,12 @@ class Choice(object):
 class Manager(object):
   """The save manager."""
   def __init__(self):
-    self.appdata_dir = os.environ['AppData']
+    try:
+      self.appdata_dir = os.environ['AppData']
+    except KeyError:
+      print('unable to proceed without an AppData directory set')
+      sys.exit(1)
+
     assert os.path.isdir(self.appdata_dir)
 
     home_dir = os.path.expanduser('~')
@@ -164,14 +174,14 @@ class Manager(object):
   def _saves_to_choices(self):
     """Simple helper to convert saves to a choice list."""
     if not self.saves:
-      raise NoSaveException
+      raise errors.NoSaveException
 
     return [Choice(i, s.name, s.name) for i, s in enumerate(self.saves)]
 
   def _profiles_to_choices(self):
     profiles = self.profiles.profiles
     if not profiles:
-      raise NoProfileException
+      raise errors.NoProfileException
 
     return [Choice(i, p.name, p.name) for i, p in enumerate(profiles)]
 
@@ -383,6 +393,7 @@ class Manager(object):
       Choice(MenuState.CREATE_PROFILE, 'create profile', 'create'),
       Choice(MenuState.SET_DEFAULT_PROFILE, 'set default profile', 'default'),
       Choice(MenuState.DELETE_PROFILE, 'delete profile', 'delete'),
+      Choice(MenuState.PROFILE_HELP, 'help', 'help')
     ]
 
     next_state = self._get_choice(choices)
@@ -472,6 +483,12 @@ class Manager(object):
     print(HELP_TEXT)
     return MenuState.MODE_SELECT
 
+  @staticmethod
+  def _profile_help():
+    """Print help text and return to the profile selection state."""
+    print(HELP_TEXT)
+    return MenuState.PROFILE
+
   # Running helpers.
   def _mainloop(self):
     if self.profile:
@@ -492,15 +509,16 @@ class Manager(object):
       MenuState.SET_DEFAULT_PROFILE: self._set_default_profile,
       MenuState.DELETE_PROFILE: self._delete_profile,
       MenuState.HELP: self._help,
+      MenuState.PROFILE_HELP: self._profile_help,
     }
 
     while state != MenuState.EXIT:
       try:
         state = handlers[state]()
-      except NoProfileException:
+      except errors.NoProfileException:
         print('no profiles')
         state = MenuState.PROFILE
-      except NoSaveException:
+      except errors.NoSaveException:
         print('no saves')
         state = MenuState.MODE_SELECT
 
