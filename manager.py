@@ -47,10 +47,10 @@ class MenuState(enum.Enum):
 
   # Profile modes.
   PROFILE = 10
-  SELECT_PROFILE = 11
-  CREATE_PROFILE = 12
-  SET_DEFAULT_PROFILE = 13
-  DELETE_PROFILE = 14
+  PROFILE_SELECT = 11
+  PROFILE_CREATE = 12
+  PROFILE_SET_DEFAULT = 13
+  PROFILE_DELETE = 14
 
   # Special modes.
   HELP = 98
@@ -389,10 +389,10 @@ class Manager(object):
   def _profile(self):
     """Select a profile-related option."""
     choices = [
-      Choice(MenuState.SELECT_PROFILE, 'select profile', 'select'),
-      Choice(MenuState.CREATE_PROFILE, 'create profile', 'create'),
-      Choice(MenuState.SET_DEFAULT_PROFILE, 'set default profile', 'default'),
-      Choice(MenuState.DELETE_PROFILE, 'delete profile', 'delete'),
+      Choice(MenuState.PROFILE_SELECT, 'select profile', 'select'),
+      Choice(MenuState.PROFILE_CREATE, 'create profile', 'create'),
+      Choice(MenuState.PROFILE_SET_DEFAULT, 'set default profile', 'default'),
+      Choice(MenuState.PROFILE_DELETE, 'delete profile', 'delete'),
       Choice(MenuState.PROFILE_HELP, 'help', 'help')
     ]
 
@@ -504,10 +504,10 @@ class Manager(object):
       MenuState.REORDER: self._reorder,
       MenuState.DELETE: self._delete,
       MenuState.PROFILE: self._profile,
-      MenuState.SELECT_PROFILE: self._select_profile,
-      MenuState.CREATE_PROFILE: self._create_profile,
-      MenuState.SET_DEFAULT_PROFILE: self._set_default_profile,
-      MenuState.DELETE_PROFILE: self._delete_profile,
+      MenuState.PROFILE_SELECT: self._select_profile,
+      MenuState.PROFILE_CREATE: self._create_profile,
+      MenuState.PROFILE_SET_DEFAULT: self._set_default_profile,
+      MenuState.PROFILE_DELETE: self._delete_profile,
       MenuState.HELP: self._help,
       MenuState.PROFILE_HELP: self._profile_help,
     }
