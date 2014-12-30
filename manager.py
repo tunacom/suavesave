@@ -210,7 +210,7 @@ class Manager(object):
         # Check to see if a keyword was typed instead of an integer.
         try:
           choice = keyword_lookup_table[choice.strip().lower()]
-        except ValueError:
+        except KeyError:
           print('invalid selection')
           continue
 
