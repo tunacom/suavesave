@@ -168,7 +168,7 @@ class Manager(object):
   @staticmethod
   def _hash(s):
     """Return a hash of |s|."""
-    return hashlib.sha256(s.encode('utf-8')).hexdigest()
+    return hashlib.sha1(s.encode('utf-8')).hexdigest()
 
   # Menu helpers.
   def _saves_to_choices(self):
