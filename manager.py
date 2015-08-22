@@ -41,9 +41,10 @@ class MenuState(enum.Enum):
   # Base modes.
   CREATE = 1
   LOAD = 2
-  AUTOLOAD = 3
-  REORDER = 4
-  DELETE = 5
+  RELOAD = 3
+  AUTOLOAD = 4
+  REORDER = 5
+  DELETE = 6
 
   # Profile modes.
   PROFILE = 10
@@ -140,6 +141,7 @@ class Manager(object):
     self.game_directory = ''
 
     self.saves = []
+    self.last_save = -1
     self.saves_file = ''
 
     profile = self.profiles.get_default()
@@ -239,6 +241,8 @@ class Manager(object):
     save_dir = os.path.join(self.profile_dir, self._hash(save_name))
     shutil.copytree(save_dir, self.game_directory)
 
+    self.last_save = index
+
   def _get_last_modified_time_in_profile(self):
     """Get the last time a file under the save directory has been modified."""
     last_time = os.path.getmtime(self.game_directory)
@@ -266,6 +270,7 @@ class Manager(object):
     choices = [
       Choice(MenuState.CREATE, 'create a save', 'create'),
       Choice(MenuState.LOAD, 'load a save', 'load'),
+      Choice(MenuState.RELOAD, 'reload previously selected save', 'reload'),
       Choice(MenuState.AUTOLOAD, 'automatically restore a save', 'autoload'),
       Choice(MenuState.REORDER, 'reorder saves', 'reorder'),
       Choice(MenuState.DELETE, 'delete saves', 'delete'),
@@ -311,6 +316,16 @@ class Manager(object):
     choices = self._saves_to_choices()
     save_number = self._get_choice(choices)
     self._set_save(save_number)
+
+    return MenuState.MODE_SELECT
+
+  def _reload(self):
+    """Reloads the previously selected save. Defaults to the last save."""
+    if not self.saves:
+      raise errors.NoSaveException
+
+    print('reloading save %s' % self.saves[self.last_save].name)
+    self._set_save(self.last_save)
 
     return MenuState.MODE_SELECT
 
@@ -381,6 +396,11 @@ class Manager(object):
     shutil.rmtree(save_dir)
     del self.saves[save_number]
     self._write_saves_file()
+
+    if save_number == self.last_save:
+      self.last_save = -1
+    elif save_number < self.last_save:
+      self.last_save -= 1
 
     print('save %d (%s) has been permanently deleted' % (save_number, name))
     return MenuState.MODE_SELECT
@@ -500,6 +520,7 @@ class Manager(object):
       MenuState.MODE_SELECT: self._select,
       MenuState.CREATE: self._create,
       MenuState.LOAD: self._load,
+      MenuState.RELOAD: self._reload,
       MenuState.AUTOLOAD: self._autoload,
       MenuState.REORDER: self._reorder,
       MenuState.DELETE: self._delete,
