@@ -376,6 +376,13 @@ class Manager(object):
     choices.append(Choice(len(choices), 'end of list', 'end'))
     new_position = self._get_choice(choices)
 
+    if save_number == self.last_save:
+      self.last_save = new_position
+    elif save_number < self.last_save < new_position:
+      self.last_save -= 1
+    elif new_position <= self.last_save < save_number:
+      self.last_save += 1
+
     self.saves.insert(new_position, save)
     self._write_saves_file()
     return MenuState.MODE_SELECT
